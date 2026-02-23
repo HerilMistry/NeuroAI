@@ -17,3 +17,6 @@ gunicorn>=21.2
 
 # Utilities
 python-decouple>=3.8
+
+# MedGemma local inference
+vllm>=0.2.0

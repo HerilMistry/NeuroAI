@@ -6,13 +6,17 @@ A mechanism-aware decision support platform for neurodegenerative drug discovery
 > This platform does NOT provide clinical predictions, diagnostic recommendations, or medical advice.
 > It is an early-stage reasoning and triage system for improving decision quality before preclinical studies.
 
-## Philosophy
+---
 
-- **Biological plausibility over prediction** - Model known mechanisms, not clinical outcomes
-- **Explicit uncertainty** - All scores include confidence indicators
-- **Safety first** - Toxicity-associated targets are prominently flagged
-- **Transparent logic** - Rule-based scoring with visible parameters
-- **Auditability** - All calculations are traceable
+## Key Philosophy
+
+- **Biological plausibility over prediction**: Model known mechanisms, not clinical outcomes
+- **Explicit uncertainty**: All scores include confidence indicators
+- **Safety first**: Toxicity-associated targets are prominently flagged
+- **Transparent logic**: Rule-based scoring with visible parameters
+- **Auditability**: All calculations are traceable
+
+---
 
 ## Quick Start
 
@@ -21,7 +25,8 @@ A mechanism-aware decision support platform for neurodegenerative drug discovery
 - Python 3.11+
 - Node.js 20+
 - PostgreSQL 15+
-- Docker (optional)
+- Docker (recommended)
+- CUDA-enabled GPU (for MedGemma local inference)
 
 ### With Docker
 
@@ -40,18 +45,21 @@ Access:
 ```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate  # Windows
+source venv/bin/activate
 pip install -r requirements.txt
 
-# Set environment variables
-set DATABASE_URL=postgres://user:pass@localhost:5432/neurodegenrx
-set DEBUG=True
+# Set environment variables (PostgreSQL)
+export POSTGRES_DB=neurodegenrx
+export POSTGRES_USER=neurodegenrx
+export POSTGRES_PASSWORD=neurodegenrx_dev
+export POSTGRES_HOST=localhost
+export DEBUG=True
 
-# Initialize database
+# Or use SQLite for development:
+export USE_SQLITE=true
+
 python manage.py migrate
 python manage.py seed_sample_data  # Optional: add sample data
-
-# Run server
 python manage.py runserver
 ```
 
@@ -62,35 +70,59 @@ cd frontend
 npm install
 npm run dev
 ```
+- Access at http://localhost:5173
+
+---
+
+## MedGemma Integration
+
+MedGemma is integrated for advanced biomedical text analysis and mechanism summarization. The model is locally inferenceable using vllm for efficient GPU inference.
+
+- **Module:** `core.medgemma.inference`
+- **API Endpoint:** `GET /api/v1/drugs/{id}/mechanism_summary/`
+- **Dependencies:** `vllm`
+
+---
 
 ## Project Structure
 
 ```
 neurodegenrx/
 ├── backend/
-│   ├── core/                   # Django app with models and logic
-│   │   ├── models.py           # Drug, Target, Pathway, etc.
-│   │   ├── logic.py            # BBB scoring, toxicity, perturbation
-│   │   ├── simulation.py       # Disease progression simulation
+│   ├── core/                   # Django app: models, logic, APIs
+│   │   ├── models/             # Drug, Target, Pathway, etc.
+│   │   ├── logic/              # BBB scoring, toxicity, perturbation
+│   │   ├── simulations/        # Disease progression simulation
 │   │   └── api/                # DRF serializers and views
-│   └── data_files/             # Local data files (gitignored)
+│   ├── medgemma/               # MedGemma integration for local inference
+│   ├── data_files/             # Local data files (gitignored)
+│   └── management/commands/    # Data ingestion, seeding
 ├── frontend/
 │   ├── src/
 │   │   ├── pages/              # Dashboard, DrugExplorer, etc.
 │   │   ├── components/         # Layout, Sidebar, Header
-│   │   ├── api/                # API client with TypeScript types
+│   │   ├── api/                # API client (TypeScript)
 │   │   └── store/              # Zustand state management
-│   └── ...
 └── docker-compose.yml
 ```
 
+---
+
 ## Data Ingestion
 
-Place data files in `backend/data_files/` and run:
+Place data files in `backend/data_files/`:
 
+- `drugbank.xml` or `drugbank.csv` - DrugBank export
+- `chembl_compounds.csv` - ChEMBL compound data
+- `disgenet_gene_disease.csv` - DisGeNET associations
+
+**Ingestion commands:**
 ```bash
 python manage.py ingest_drugbank --file data_files/drugbank.csv --version 5.1.10
+python manage.py seed_sample_data  # For development only
 ```
+
+---
 
 ## API Endpoints
 
@@ -98,8 +130,11 @@ python manage.py ingest_drugbank --file data_files/drugbank.csv --version 5.1.10
 |----------|-------------|
 | `GET /api/v1/drugs/` | List drugs with CNS viability |
 | `GET /api/v1/drugs/{id}/` | Drug details with targets and pathways |
+| `GET /api/v1/drugs/{id}/mechanism_summary/` | MedGemma mechanism summary |
 | `GET /api/v1/pathways/` | Disease-relevant pathways |
 | `POST /api/v1/simulate/` | Run disease progression simulation |
+
+---
 
 ## Core Features
 
@@ -107,6 +142,35 @@ python manage.py ingest_drugbank --file data_files/drugbank.csv --version 5.1.10
 2. **Toxicity Flagging** - Known toxicity-associated target detection
 3. **Pathway Perturbation** - Drug effects on disease pathways
 4. **Progression Simulation** - Mechanistic exploration (NOT clinical prediction)
+5. **MedGemma Summarization** - Advanced mechanism summaries using LLM
+
+---
+
+## Development & Contribution
+
+- Use Docker Compose for easiest setup.
+- For backend-only development, use the provided `run_backend.sh` script (uses SQLite).
+- Data files should be placed in `backend/data_files/` and are gitignored.
+- See `backend/data_files/README.md` for data expectations.
+- Extend models and logic in `backend/core/` as needed.
+- Frontend code is in `frontend/src/`.
+
+---
+
+## Testing
+
+- Backend: Use Django's test framework (`python manage.py test`)
+- Frontend: Add tests with your preferred React testing library
+
+---
+
+## Deployment
+
+- Production deployment should use Gunicorn (see backend Dockerfile).
+- Static files are handled by Whitenoise.
+- Set appropriate environment variables for production (disable DEBUG, set allowed hosts, use secure secrets).
+
+---
 
 ## License
 

@@ -14,6 +14,7 @@
 - **Frontend:** React (Vite, TypeScript, Zustand, TailwindCSS)
 - **Database:** PostgreSQL (default), SQLite (dev option)
 - **Containerization:** Docker Compose for full-stack orchestration
+- **LLM Integration:** MedGemma via vllm for efficient local inference
 
 ---
 
@@ -27,6 +28,7 @@ neurodegenrx/
 │   │   ├── logic/              # BBB scoring, toxicity, perturbation
 │   │   ├── simulations/        # Disease progression simulation
 │   │   └── api/                # DRF serializers and views
+│   ├── medgemma/               # MedGemma integration for local inference
 │   ├── data_files/             # Local data files (gitignored)
 │   └── management/commands/    # Data ingestion, seeding
 ├── frontend/
@@ -47,7 +49,8 @@ neurodegenrx/
 - Python 3.11+
 - Node.js 20+
 - PostgreSQL 15+
-- Docker (optional, recommended)
+- Docker (recommended)
+- CUDA-enabled GPU (for MedGemma local inference)
 
 ### With Docker
 
@@ -67,7 +70,7 @@ python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# Set environment variables (if using PostgreSQL)
+# Set environment variables (PostgreSQL)
 export POSTGRES_DB=neurodegenrx
 export POSTGRES_USER=neurodegenrx
 export POSTGRES_PASSWORD=neurodegenrx_dev
@@ -119,12 +122,35 @@ python manage.py seed_sample_data  # For development only
   - `ingest_drugbank` — Ingest DrugBank data  
   - `seed_sample_data` — Populate with sample data for development
 
+### MedGemma Integration
+
+**MedGemma** is integrated for advanced biomedical text analysis and mechanism summarization. The model is locally inferenceable using vllm for efficient GPU inference.
+
+- **Module:** `core.medgemma.inference`
+- **Example Use:** Drug mechanism summarization, literature evidence extraction, pathway annotation
+- **Dependencies:** `vllm`
+
+#### API Endpoint
+
+`GET /api/v1/drugs/{id}/mechanism_summary/`
+
+Returns a MedGemma-generated summary of the drug's mechanism of action.
+
+**Example Response:**
+```json
+{
+  "drug": "Donepezil",
+  "mechanism_summary": "Donepezil is an acetylcholinesterase inhibitor that increases acetylcholine levels in the brain, improving cognitive function in Alzheimer's disease."
+}
+```
+
 ### API Endpoints
 
 | Endpoint                  | Description                                   |
 |---------------------------|-----------------------------------------------|
 | `GET /api/v1/drugs/`      | List drugs with CNS viability                 |
 | `GET /api/v1/drugs/{id}/` | Drug details with targets and pathways        |
+| `GET /api/v1/drugs/{id}/mechanism_summary/` | MedGemma mechanism summary |
 | `GET /api/v1/pathways/`   | Disease-relevant pathways                     |
 | `POST /api/v1/simulate/`  | Run disease progression simulation            |
 | `GET /api/v1/system-info/`| Platform info, statistics, disclaimers        |
@@ -147,6 +173,7 @@ python manage.py seed_sample_data  # For development only
 2. **Toxicity Flagging:** Detection of known toxicity-associated targets
 3. **Pathway Perturbation:** Drug effects on disease pathways
 4. **Progression Simulation:** Mechanistic exploration (not clinical prediction)
+5. **MedGemma Summarization:** Advanced mechanism summaries using LLM
 
 ---
 

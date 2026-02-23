@@ -39,6 +39,20 @@ class DrugViewSet(viewsets.ReadOnlyModelViewSet):
         if self.action == 'retrieve':
             return DrugDetailSerializer
         return DrugSerializer
+
+    @action(detail=True, methods=['get'])
+    def mechanism_summary(self, request, pk=None):
+        """
+        Returns MedGemma-generated mechanism summary for a drug.
+        """
+        from core.medgemma.inference import summarize_drug_mechanism
+        drug = self.get_object()
+        description = drug.synonyms[0] if drug.synonyms else drug.name
+        summary = summarize_drug_mechanism(drug.name, description)
+        return Response({
+            'drug': drug.name,
+            'mechanism_summary': summary,
+        })
     
     def get_queryset(self):
         qs = super().get_queryset()
