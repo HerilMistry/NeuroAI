@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd backend && python3 manage\\.py runserver$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
