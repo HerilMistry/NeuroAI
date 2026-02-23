@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { api, Drug } from '@/api/client'
-import { Search, Filter, ChevronRight, Brain, AlertTriangle, Check, X } from 'lucide-react'
+import { Search, ChevronRight, Brain, AlertTriangle, Check, X } from 'lucide-react'
 
 export function DrugExplorer() {
     const [search, setSearch] = useState('')

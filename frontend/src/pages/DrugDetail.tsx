@@ -4,8 +4,6 @@ import { api } from '@/api/client'
 import {
     ArrowLeft,
     AlertTriangle,
-    Check,
-    X,
     Target,
     GitBranch,
     Info,

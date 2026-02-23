@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { api, Drug, SimulationResponse } from '@/api/client'
+import { api, SimulationResponse } from '@/api/client'
 import {
     Play,
     AlertTriangle,
@@ -230,7 +230,6 @@ function SimulationResults({ result }: { result: SimulationResponse }) {
 
 function ComparisonItem({ param, diff }: { param: string; diff: number }) {
     const isPositive = diff > 0.01
-    const isNegative = diff < -0.01
 
     // Determine if change is "good" - depends on parameter semantics
     // For now, assume lower pathology / higher function is better
