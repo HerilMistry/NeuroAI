@@ -20,28 +20,43 @@ A mechanism-aware decision support platform for neurodegenerative drug discovery
 
 ## Quick Start
 
+### Easiest Way: Unified Startup Script
+
+```bash
+./run_project.sh
+```
+
+This interactive script lets you choose:
+1. **Run Backend Only** - Local SQLite development
+2. **Run Frontend Only** - Requires backend running
+3. **Run Both** - Backend + Frontend (requires 2 terminals)
+4. **Run with Docker Compose** - Full stack (PostgreSQL, recommended)
+5. **Check System Requirements** - Verify all dependencies
+
 ### Prerequisites
 
 - Python 3.11+
 - Node.js 20+
-- PostgreSQL 15+
-- Docker (recommended)
-- CUDA-enabled GPU (for MedGemma local inference)
+- PostgreSQL 15+ (optional, for Docker mode)
+- Docker (recommended for full stack)
+- CUDA-enabled GPU (optional, for MedGemma local inference)
 
-### With Docker
+### Access URLs
 
-```bash
-docker-compose up
-```
+Once running:
+- **Frontend:** http://localhost:5173
+- **Backend API:** http://localhost:8000/api/v1
+- **Admin Panel:** http://localhost:8000/admin
 
-Access:
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8000/api/v1/
-
-### Manual Setup
+### Manual Setup (Alternative)
 
 #### Backend
 
+```bash
+./run_backend.sh
+```
+
+Or manually:
 ```bash
 cd backend
 python -m venv venv
@@ -66,11 +81,15 @@ python manage.py runserver
 #### Frontend
 
 ```bash
+./run_frontend.sh
+```
+
+Or manually:
+```bash
 cd frontend
 npm install
 npm run dev
 ```
-- Access at http://localhost:5173
 
 ---
 

@@ -44,20 +44,49 @@ neurodegenrx/
 
 ## Quick Start
 
+### Unified Startup Script (Recommended)
+
+The easiest way to start NeuroDegenRx is using the interactive project startup script:
+
+```bash
+./run_project.sh
+```
+
+This script provides an interactive menu with options to:
+1. **Run Backend Only** - Local development with SQLite
+2. **Run Frontend Only** - Requires backend running elsewhere
+3. **Run Both** - Backend + Frontend (requires 2 terminals)
+4. **Run with Docker Compose** - Full stack with PostgreSQL
+5. **Check System Requirements** - Verify Python, Node.js, Docker, etc.
+6. **Exit**
+
+#### Features
+- ✅ Color-coded output for easy reading
+- ✅ Automatic dependency checking
+- ✅ Helpful error messages
+- ✅ Clear success indicators with access URLs
+
 ### Prerequisites
 
 - Python 3.11+
 - Node.js 20+
-- PostgreSQL 15+
-- Docker (recommended)
-- CUDA-enabled GPU (for MedGemma local inference)
+- PostgreSQL 15+ (optional, for Docker mode)
+- Docker (recommended for full stack)
+- CUDA-enabled GPU (optional, for MedGemma local inference)
 
-### With Docker
+### With Docker Compose
 
+```bash
+./run_project.sh
+# Select option 4: Run with Docker Compose
+```
+
+Or directly:
 ```bash
 docker-compose up
 ```
 - Frontend: http://localhost:5173
+````
 - Backend API: http://localhost:8000/api/v1/
 
 ### Manual Setup
