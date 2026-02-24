@@ -60,21 +60,21 @@ WSGI_APPLICATION = 'neurodegenrx_backend.wsgi.application'
 # Database
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('POSTGRES_DB', 'neurodegenrx'),
-        'USER': os.environ.get('POSTGRES_USER', 'neurodegenrx'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'neurodegenrx_dev'),
-        'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
-        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
-# Use SQLite for development if PostgreSQL is not available
-if os.environ.get('USE_SQLITE', 'False').lower() == 'true':
+# Use PostgreSQL for production if configured
+if os.environ.get('USE_POSTGRES', 'False').lower() == 'true':
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('POSTGRES_DB', 'neurodegenrx'),
+            'USER': os.environ.get('POSTGRES_USER', 'neurodegenrx'),
+            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'neurodegenrx_dev'),
+            'HOST': os.environ.get('POSTGRES_HOST', 'localhost'),
+            'PORT': os.environ.get('POSTGRES_PORT', '5432'),
         }
     }
 

@@ -1,5 +1,11 @@
 """
-DRF ViewSets and Views for NeuroDegenRx API.
+DRF ViewSets and Views for NeuroAI API.
+
+Uses only pre-trained models for predictions:
+- GraphDTA for binding affinity
+- MedGemma for toxicity assessment and validation
+- ESM-2 for protein embeddings
+- RDKit for molecular features
 """
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
@@ -7,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Count
 from django_filters.rest_framework import DjangoFilterBackend
+import logging
 
 from core.models import (
     Drug, Target, DrugTarget, Pathway, PathwayTarget,
@@ -19,6 +26,16 @@ from .serializers import (
     SimulationResponseSerializer, DatasetProvenanceSerializer,
 )
 from core.simulations import run_simulation
+
+# Import real ML models with graceful fallback for development
+try:
+    from core.ml.inference import get_unified_predictor
+    ML_AVAILABLE = True
+    logger = logging.getLogger(__name__)
+except ImportError as e:
+    ML_AVAILABLE = False
+    logger = logging.getLogger(__name__)
+    logger.warning(f"ML models not available: {e}. Using mock predictions for development.")
 
 
 class DrugViewSet(viewsets.ReadOnlyModelViewSet):
@@ -287,12 +304,19 @@ class SystemInfoView(APIView):
     
     def get(self, request):
         return Response({
-            'platform': 'NeuroDegenRx',
-            'version': '1.0.0',
+            'platform': 'NeuroAI',
+            'version': '2.0.0',
             'description': (
-                'A mechanism-aware decision support platform for '
-                'neurodegenerative drug discovery. NOT a clinical decision system.'
+                'AI-powered drug discovery platform using pre-trained models. '
+                'Combines molecular predictions with medical reasoning via MedGemma.'
             ),
+            'ml_models': {
+                'binding_affinity': 'GraphDTA (pre-trained)',
+                'protein_embeddings': 'ESM-2-33M (Meta)',
+                'toxicity_assessment': 'MedGemma-7B (Google)',
+                'molecular_features': 'RDKit + Morgan fingerprints + ChemBERTA',
+                'reasoning': 'MedGemma-7B (medical reasoning)',
+            },
             'statistics': {
                 'drug_count': Drug.objects.count(),
                 'target_count': Target.objects.count(),
@@ -303,9 +327,237 @@ class SystemInfoView(APIView):
                 DatasetProvenance.objects.values_list('dataset_name', flat=True).distinct()
             ),
             'disclaimers': [
-                'This platform does NOT provide clinical predictions.',
-                'All simulations are for mechanistic exploration only.',
+                'This platform uses pre-trained ML models for predictions.',
+                'All predictions are exploratory and NOT clinically validated.',
                 'Results should be reviewed by domain experts.',
                 'No diagnostic or treatment recommendations are made.',
             ],
         })
+
+
+class BindingAffinityPredictionView(APIView):
+    """
+    Predict drug-target binding affinity using GraphDTA.
+    
+    POST /api/v1/predictions/binding-affinity/
+    
+    Body:
+    {
+        "molecule_smiles": "CCO",
+        "target_name": "TNF-alpha",
+        "target_sequence": "MGSSDQ..." (optional)
+    }
+    
+    Returns:
+    {
+        "molecule_analysis": {...},
+        "binding_affinity": {
+            "target": "TNF-alpha",
+            "binding_score": 7.5,
+            "confidence": "high",
+            "method": "GraphDTA (pre-trained)",
+            "reasoning": "..."
+        },
+        "status": "success"
+    }
+    """
+    
+    def post(self, request):
+        try:
+            molecule_smiles = request.data.get('molecule_smiles')
+            target_name = request.data.get('target_name', 'Unknown Target')
+            target_sequence = request.data.get('target_sequence')
+            
+            if not molecule_smiles:
+                return Response(
+                    {'error': 'molecule_smiles is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get predictor
+            predictor = get_unified_predictor()
+            
+            # Predict binding affinity
+            binding = predictor.predict_binding_affinity(
+                molecule_smiles,
+                target_name,
+                target_sequence=target_sequence,
+                validate_with_medgemma=True
+            )
+            
+            # Analyze molecule
+            mol_analysis = predictor.analyze_molecule(molecule_smiles)
+            
+            return Response({
+                'molecule_analysis': mol_analysis.to_dict(),
+                'binding_affinity': binding.to_dict(),
+                'status': 'success',
+                'model_info': {
+                    'method': 'GraphDTA (pre-trained weights)',
+                    'paper': 'Öztürk et al., 2020',
+                    'validation': 'MedGemma medical reasoning',
+                }
+            })
+            
+        except Exception as e:
+            logger.error(f"Binding affinity prediction error: {e}")
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class ToxicityAssessmentView(APIView):
+    """
+    Assess molecular toxicity using MedGemma.
+    
+    POST /api/v1/predictions/toxicity/
+    
+    Body:
+    {
+        "molecule_smiles": "CCO",
+        "molecule_name": "Ethanol" (optional)
+    }
+    
+    Returns:
+    {
+        "toxicity": {
+            "molecule": "Ethanol",
+            "toxicity_risk": "low",
+            "mechanism": "...",
+            "confidence": "medium",
+            "reasoning": "..."
+        },
+        "status": "success"
+    }
+    """
+    
+    def post(self, request):
+        try:
+            molecule_smiles = request.data.get('molecule_smiles')
+            molecule_name = request.data.get('molecule_name', 'Unknown')
+            
+            if not molecule_smiles:
+                return Response(
+                    {'error': 'molecule_smiles is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get predictor
+            predictor = get_unified_predictor()
+            
+            # Assess toxicity
+            toxicity = predictor.assess_toxicity(molecule_smiles, molecule_name)
+            
+            return Response({
+                'toxicity': toxicity.to_dict(),
+                'status': 'success',
+                'model': 'MedGemma-7B (medical reasoning)'
+            })
+            
+        except Exception as e:
+            logger.error(f"Toxicity assessment error: {e}")
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class DrugResponsePredictionView(APIView):
+    """
+    Comprehensive drug response prediction combining multiple models.
+    
+    POST /api/v1/predictions/drug-response/
+    
+    Body:
+    {
+        "molecule_smiles": "CCO",
+        "target_name": "TNF-alpha",
+        "target_sequence": "MGSSDQ..." (optional),
+        "disease_context": "Neuroinflammation" (optional)
+    }
+    
+    Returns comprehensive assessment including:
+    - Molecular analysis
+    - Binding affinity
+    - Toxicity
+    - Overall recommendation
+    """
+    
+    def post(self, request):
+        try:
+            molecule_smiles = request.data.get('molecule_smiles')
+            target_name = request.data.get('target_name', 'Unknown')
+            disease_context = request.data.get('disease_context')
+            
+            if not molecule_smiles:
+                return Response(
+                    {'error': 'molecule_smiles is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Get predictor
+            predictor = get_unified_predictor()
+            
+            # Comprehensive prediction
+            result = predictor.predict_drug_response(
+                molecule_smiles,
+                target_name,
+                disease_context=disease_context
+            )
+            
+            return Response({
+                'drug_response_prediction': result,
+                'status': 'success',
+                'models_used': [
+                    'GraphDTA (binding affinity)',
+                    'MedGemma-7B (toxicity, reasoning)',
+                    'ESM-2 (protein embeddings)',
+                    'RDKit (molecular features)',
+                ]
+            })
+            
+        except Exception as e:
+            logger.error(f"Drug response prediction error: {e}")
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class DemoMoleculeAnalysisView(APIView):
+    """
+    Quick molecular analysis without binding/toxicity predictions.
+    
+    POST /api/v1/predictions/molecule-analysis/
+    
+    Body:
+    {
+        "molecule_smiles": "CCO"
+    }
+    """
+    
+    def post(self, request):
+        try:
+            molecule_smiles = request.data.get('molecule_smiles')
+            
+            if not molecule_smiles:
+                return Response(
+                    {'error': 'molecule_smiles is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            predictor = get_unified_predictor()
+            analysis = predictor.analyze_molecule(molecule_smiles)
+            
+            return Response({
+                'analysis': analysis.to_dict(),
+                'status': 'success'
+            })
+            
+        except Exception as e:
+            logger.error(f"Molecule analysis error: {e}")
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

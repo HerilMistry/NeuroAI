@@ -180,6 +180,74 @@ export interface SystemInfo {
     }
     data_sources: string[]
     disclaimers: string[]
+    ml_models?: {
+        binding_affinity: string
+        protein_embeddings: string
+        toxicity_assessment: string
+        molecular_features: string
+        reasoning: string
+    }
+}
+
+// Prediction Types
+export interface MoleculeAnalysis {
+    smiles: string
+    validity: boolean
+    molecular_weight?: number
+    logp?: number
+    h_bond_acceptors?: number
+    h_bond_donors?: number
+}
+
+export interface BindingAffinityPrediction {
+    target: string
+    binding_score: number
+    confidence: string
+    method: string
+    reasoning?: string
+    validated: boolean
+}
+
+export interface BindingAffinityResponse {
+    molecule_analysis: MoleculeAnalysis
+    binding_affinity: BindingAffinityPrediction
+    status: string
+    model_info?: {
+        method: string
+        paper?: string
+        validation?: string
+    }
+}
+
+export interface ToxicityAssessment {
+    molecule: string
+    toxicity_risk: string
+    mechanism?: string
+    confidence: string
+    reasoning?: string
+}
+
+export interface ToxicityResponse {
+    toxicity: ToxicityAssessment
+    status: string
+    model?: string
+}
+
+export interface DrugResponsePrediction {
+    molecule_analysis: MoleculeAnalysis
+    binding_affinity: BindingAffinityPrediction
+    toxicity: ToxicityAssessment
+    overall_assessment: {
+        composite_score: number
+        recommendation: string
+        rationale: string
+    }
+}
+
+export interface DrugResponseResponse {
+    drug_response_prediction: DrugResponsePrediction
+    status: string
+    models_used: string[]
 }
 
 // API Functions
@@ -237,5 +305,42 @@ export const api = {
         fetchJson<SimulationResponse>('/simulate/', {
             method: 'POST',
             body: JSON.stringify(request),
+        }),
+
+    // ML Predictions (New)
+    predictMoleculeAnalysis: (smiles: string) =>
+        fetchJson<{ analysis: MoleculeAnalysis; status: string }>('/predictions/molecule-analysis/', {
+            method: 'POST',
+            body: JSON.stringify({ molecule_smiles: smiles }),
+        }),
+
+    predictBindingAffinity: (smiles: string, targetName: string, targetSequence?: string) =>
+        fetchJson<BindingAffinityResponse>('/predictions/binding-affinity/', {
+            method: 'POST',
+            body: JSON.stringify({
+                molecule_smiles: smiles,
+                target_name: targetName,
+                target_sequence: targetSequence,
+            }),
+        }),
+
+    predictToxicity: (smiles: string, moleculeName?: string) =>
+        fetchJson<ToxicityResponse>('/predictions/toxicity/', {
+            method: 'POST',
+            body: JSON.stringify({
+                molecule_smiles: smiles,
+                molecule_name: moleculeName || 'Unknown',
+            }),
+        }),
+
+    predictDrugResponse: (smiles: string, targetName: string, targetSequence?: string, diseaseContext?: string) =>
+        fetchJson<DrugResponseResponse>('/predictions/drug-response/', {
+            method: 'POST',
+            body: JSON.stringify({
+                molecule_smiles: smiles,
+                target_name: targetName,
+                target_sequence: targetSequence,
+                disease_context: diseaseContext,
+            }),
         }),
 }
