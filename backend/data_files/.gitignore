@@ -1,8 +1,0 @@
-# Git ignore for data files
-*.xml
-*.csv
-*.json
-*.tsv
-*.gz
-*.zip
-!README.md

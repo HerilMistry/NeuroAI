@@ -1,22 +1,152 @@
-# Django and REST framework
+# ========== CORE FRAMEWORK ==========
 django>=5.0
 djangorestframework>=3.14
 django-cors-headers>=4.3
 django-filter>=24.0
 whitenoise>=6.6
 
-# Database
-psycopg2-binary>=2.9
+# ========== AUTHENTICATION & SECURITY ==========
+djangorestframework-simplejwt>=5.3.0  # JWT tokens
+django-ratelimit>=4.1.0  # Rate limiting
+cryptography>=41.0.0  # For JWT
+django-guardian>=2.4.0  # Object-level permissions (RBAC)
 
-# Scientific computing
+# ========== CACHING & ASYNC PROCESSING ==========
+redis>=5.0.0  # Redis client
+celery>=5.3.0  # Async task queue
+flower>=2.0.0  # Celery monitoring UI
+django-celery-beat>=2.5.0  # Celery scheduler
+django-celery-results>=2.5.0  # Store celery results in DB
+
+# ========== LOGGING & MONITORING ==========
+python-json-logger>=2.0.7  # JSON logging
+sentry-sdk>=1.38.0  # Error tracking
+prometheus-client>=0.19.0  # Prometheus metrics
+django-prometheus>=2.3.0  # Django Prometheus integration
+structlog>=23.2.0  # Structured logging
+
+# ========== API DOCUMENTATION & VALIDATION ==========
+drf-spectacular>=0.26.5  # OpenAPI 3.0 schema generation (Swagger)
+pydantic>=2.5.0  # Data validation
+pydantic-settings>=2.1.0  # Environment settings validation
+
+# ========== DATABASE ==========
+psycopg2-binary>=2.9  # PostgreSQL adapter
+django-db-connection-pool>=1.3  # Connection pooling
+django-extensions>=3.2  # Database utilities
+
+# ========== SCIENTIFIC COMPUTING ==========
 numpy>=1.26
 pandas>=2.1
+scikit-learn>=1.3  # Machine learning utilities
+scipy>=1.11  # Scientific computing
 
-# Production server
+# ========== DEEP LEARNING & NEURAL NETWORKS ==========
+torch>=2.0.0  # PyTorch core
+torchvision>=0.15.0  # Computer vision utilities
+torchaudio>=2.0.0  # Audio utilities
+torch-geometric>=2.4.0  # Graph neural networks
+torch-scatter>=2.1.0  # Scatter operations for GNNs
+torch-sparse>=0.6.16  # Sparse tensor operations
+torch-cluster>=1.6.0  # Clustering algorithms
+torch-spline-conv>=1.2.1  # Spline convolution
+
+# ========== TRANSFORMERS & NLP ==========
+transformers>=4.30.0  # HuggingFace transformer models
+tokenizers>=0.13.0  # Fast tokenization
+accelerate>=0.20.0  # Distributed training utilities
+onnx>=1.14.0  # ONNX model export
+onnxruntime>=1.15.0  # ONNX inference
+
+# ========== PROTEIN & MOLECULAR ANALYSIS ==========
+biopython>=1.81  # Bioinformatics toolkit
+rdkit>=2023.09.0  # Cheminformatics
+biotite>=0.37.0  # Bioinformatics interface
+py3Dmol>=2.0.0  # 3D molecular visualization
+matplotlib-inline>=0.1.0  # Inline plotting
+
+# ========== REINFORCEMENT LEARNING ==========
+stable-baselines3>=2.0.0  # RL algorithms (DQN, PPO, etc.)
+gymnasium>=0.28.0  # RL environment framework (replaces gym)
+sb3-contrib>=2.0.0  # Additional SB3 algorithms
+
+# ========== VECTOR EMBEDDINGS & RETRIEVAL ==========
+chromadb>=0.3.21  # Vector database for RAG
+langchain>=0.0.300  # LLM orchestration framework
+langchain-community>=0.0.1  # Community integrations
+sentence-transformers>=2.2.0  # Semantic embeddings
+
+# ========== EXPLAINABILITY & UNCERTAINTY ==========
+shap>=0.42.0  # SHAP values for explainability
+lime>=0.2.0  # Local interpretable model-agnostic explanations
+pytorch-lightning>=2.0.0  # Lightning for training
+pymc>=5.0.0  # Bayesian modeling
+arviz>=0.15.0  # Exploratory analysis of Bayesian models
+
+# ========== GRAPH NEURAL NETWORKS UTILS ==========
+dgl>=1.0.0  # Deep Graph Library
+networkx>=3.1  # Network analysis
+community>=1.0.0  # Community detection
+
+# ========== BIOINFORMATICS DATA ==========
+PubChemPy>=1.0.0  # PubChem API
+Bio>=1.81  # Alias for BioPython
+
+# ========== API & LLM INTEGRATION ==========
+openai>=1.3.0  # OpenAI API (GPT-4, etc.)
+google-generativeai>=0.3.0  # Google Gemini & MedGemma API
+anthropic>=0.7.0  # Anthropic Claude API
+
+# ========== VECTOR DATABASES ==========
+pgvector>=0.1.0  # PostgreSQL vector extension wrapper
+
+# ========== MODEL SERVING ==========
+bentoml>=1.1.0  # Model serving framework
+vllm>=0.2.0  # Fast LLM inference
+
+# ========== DISTRIBUTED COMPUTING ==========
+ray>=2.6.0  # Distributed ML framework
+dask>=2023.9.0  # Parallel computing
+cloudpickle>=2.2.0  # Serialization for distributed computing
+
+# ========== TESTING & VALIDATION ==========
+pytest>=7.4.0  # Testing framework
+pytest-cov>=4.1.0  # Coverage measurement
+hypothesis>=6.82.0  # Property-based testing
+factory-boy>=3.3.0  # Test data factories
+
+# ========== PRODUCTION SERVER ==========
 gunicorn>=21.2
+uvicorn>=0.24.0  # ASGI server (optional, for async support)
 
-# Utilities
-python-decouple>=3.8
+# ========== UTILITIES ==========
+python-decouple>=3.8  # Environment variables
+django-environ>=0.21.0  # Environment configuration
+pydantic-core>=2.10.0  # Enhanced Pydantic validation
+python-dateutil>=2.8.2  # Date/time utilities
+requests>=2.31.0  # HTTP client
+pytz>=2023.3  # Timezone support
 
-# MedGemma local inference
-vllm>=0.2.0
+# ========== MedGEMMA LOCAL INFERENCE ==========
+vllm>=0.2.0  # LLM inference engine
+torch>=2.0.0  # PyTorch (required by vllm)
+transformers>=4.35.0  # Hugging Face transformers
+peft>=0.7.0  # Parameter-efficient fine-tuning (for future enhancements)
+accelerate>=0.24.0  # Multi-GPU acceleration
+
+# ========== TESTING ==========
+pytest>=7.4.0
+pytest-django>=4.7.0
+pytest-cov>=4.1.0
+pytest-asyncio>=0.21.0
+factory-boy>=3.3.0  # Test data factories
+faker>=20.1.0  # Fake data generation
+responses>=0.24.0  # Mock HTTP requests
+
+# ========== CODE QUALITY ==========
+black>=23.12.0  # Code formatter
+flake8>=6.1.0  # Linter
+pylint>=3.0.0  # Code analysis
+mypy>=1.7.0  # Type checking
+isort>=5.13.0  # Import sorting
+django-stubs>=4.2.0  # Django type hints
