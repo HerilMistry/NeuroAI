@@ -1,0 +1,118 @@
+# NeuroAI Frontend - Quick Lovable Prompt (Copy-Paste Ready)
+
+```
+You are building a frontend for NeuroAI, an AI-powered drug discovery platform focused on neurodegenerative diseases.
+
+## PROJECT OVERVIEW
+- Backend: Django REST API running at http://localhost:8000/api/v1/
+- Framework: React 18 with TypeScript
+- Styling: Tailwind CSS
+- Purpose: Exploratory AI drug discovery (NOT clinical predictions)
+
+## CORE DATA MODELS
+
+### Drugs
+- Fields: id, drugbank_id, name, smiles, molecular_weight, logp, cns_mpo_score, cns_viable, pains_alerts
+- Relationships: target_interactions[], pathway_effects[]
+
+### Targets
+- Fields: id, gene_symbol, protein_name, disease_relevance_score, is_toxicity_associated, brain_expression_level
+- Relationships: drug_interactions[], pathways[]
+
+### Pathways
+- Fields: id, pathway_id, name, category, disease_relevance, activation_effect
+- Categories: neuroinflammation, mitochondrial, protein_aggregation, synaptic, autophagy, oxidative_stress, apoptosis, neurotransmission, metabolism
+
+### DrugPathwayEffect
+- Fields: id, drug, pathway, perturbation_score, direction (activation/inhibition), disease_impact (beneficial/detrimental), confidence
+
+## KEY API ENDPOINTS
+
+### Drugs
+- GET /api/v1/drugs/ (filters: search, cns_viable, is_approved, ordering)
+- GET /api/v1/drugs/{id}/ (returns detailed view with targets and pathway_effects)
+- GET /api/v1/drugs/{id}/targets/
+- GET /api/v1/drugs/{id}/pathway_effects/
+- GET /api/v1/drugs/cns_viable/
+
+### Targets
+- GET /api/v1/targets/ (filters: search, is_toxicity_associated, brain_expression_level)
+- GET /api/v1/targets/{id}/
+- GET /api/v1/targets/{id}/drugs/
+
+### Pathways
+- GET /api/v1/pathways/ (filters: search, category, disease_relevance)
+- GET /api/v1/pathways/{id}/
+- GET /api/v1/pathways/{id}/targets/
+- GET /api/v1/pathways/{id}/drug_effects/
+
+### Pathway Effects
+- GET /api/v1/pathway-effects/ (filters: direction, disease_impact, has_safety_concern)
+
+### Predictions (All POST methods)
+- POST /api/v1/predictions/binding-affinity/ → {molecule_smiles, target_name, target_sequence?}
+- POST /api/v1/predictions/toxicity/ → {molecule_smiles, molecule_name?}
+- POST /api/v1/predictions/drug-response/ → {molecule_smiles, target_name, target_sequence?, disease_context?}
+- POST /api/v1/predictions/molecule-analysis/ → {molecule_smiles}
+
+### Simulations
+- POST /api/v1/simulate/ → {drug_id?, disease_state_id?, time_steps: 10}
+- Response: {baseline: {...trajectory}, intervention: {...trajectory}, comparison: {...}}
+
+### Utilities
+- GET /api/v1/system/ (returns platform info, ML models, statistics)
+- GET /api/v1/disease-states/ (list available disease states)
+- GET /api/v1/disease-states/default/ (default state for simulations)
+
+## PAGES TO BUILD
+
+1. **Home/Dashboard** - Platform overview, statistics, quick links
+2. **Drug Browser** - List with filtering, search, pagination
+3. **Drug Detail** - Full drug info, targets table, pathway effects visualization, safety summary
+4. **Target Browser** - List with filtering, disease associations
+5. **Target Detail** - Target info, connected drugs, expression levels
+6. **Pathway Browser** - Category-based browsing, pathway cards
+7. **Pathway Detail** - Targets in pathway, drug effects, network visualization
+8. **Binding Affinity Predictor** - Form (SMILES + target) → Results with score
+9. **Toxicity Assessor** - Form (SMILES) → Toxicity risk + mechanism
+10. **Drug Response Predictor** - Comprehensive form → Multi-model results
+11. **Simulation Dashboard** - Disease state + drug selection → Trajectory comparison
+12. **About/System Info** - ML models used, data sources, disclaimers
+
+## IMPORTANT REQUIREMENTS
+
+- Display prominent disclaimers on ALL prediction pages: "NOT clinical prediction - Exploratory AI only"
+- Show confidence levels for predictions (high/medium/low)
+- Show model attribution (e.g., "GraphDTA (pre-trained)")
+- Use color coding: Green = beneficial, Orange = warning, Red = danger
+- Implement pagination for large datasets
+- Add search/filter functionality for drugs, targets, pathways
+- Responsive mobile design
+- Handle loading states and errors gracefully
+- Use tables for interaction data with sorting
+
+## VISUALIZATION REQUIREMENTS
+
+- Charts for disease progression trajectories (baseline vs intervention)
+- Perturbation score visualizations for pathway effects
+- Color-coded safety indicators
+- SMILES structure display (can use RDKit web or similar)
+- Network diagrams for pathway-target relationships (optional but nice)
+
+## STYLING
+
+- Primary Color: #0066CC (Science/Trust)
+- Success: #00AA44, Warning: #FF8800, Danger: #CC0000
+- Use Tailwind's spacing and responsive utilities
+- Card-based layout with white on light-gray background
+- Clean, minimal design with good whitespace
+
+## DEPLOYMENT
+
+- Backend runs locally: http://localhost:8000
+- Set REACT_APP_API_BASE_URL environment variable
+- All responses are JSON with standardized structure
+- No authentication needed for development
+```
+
+This is everything needed to generate a complete, functional frontend that integrates with all NeuroAI backend endpoints!
