@@ -259,7 +259,7 @@ class ModelManager:
 
     def _load_graphdta(self, meta: Dict) -> Any:
         """Load GraphDTA checkpoint."""
-        from backend.core.ml.binding_affinity import GraphDTAModel
+        from core.ml.binding_affinity import GraphDTAModel
 
         cache_path = self.cache_dir / meta["local_path"]
 

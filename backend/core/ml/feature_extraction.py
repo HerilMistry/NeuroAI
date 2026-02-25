@@ -53,7 +53,7 @@ class RDKitDescriptors:
                 "rotatable_bonds": Descriptors.NumRotatableBonds(mol),  # Rotation freedom
                 "aromatic_rings": Descriptors.NumAromaticRings(mol),  # Aromaticity
                 "tpsa": Descriptors.TPSA(mol),  # Topological PSA
-                "psa": Descriptors.PSA(mol),  # Polar surface area
+                "psa": Descriptors.LabuteASA(mol),  # Labute ASA (polar surface area approx)
                 "labuteasa": Descriptors.PEOE_VSA1(mol),  # Electrostatic features
                 "bertzct": Descriptors.BertzCT(mol),  # Complexity
             }

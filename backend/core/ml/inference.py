@@ -20,13 +20,33 @@ from typing import Dict, Optional, Tuple, List
 from dataclasses import dataclass
 from enum import Enum
 
-from backend.core.ml.pretrained_models import get_model_manager
-from backend.core.ml.feature_extraction import MolecularFeatureExtractor
-from backend.core.ml.binding_affinity import GraphDTAPredictor, smiles_to_molecule_features
-from backend.core.medgemma_service import MedGemmaService
-
 logger = logging.getLogger(__name__)
 
+# Graceful imports – all heavy deps are optional
+try:
+    from core.ml.pretrained_models import get_model_manager
+except ImportError as _e:
+    logger.warning(f"pretrained_models unavailable: {_e}")
+    get_model_manager = None
+
+try:
+    from core.ml.feature_extraction import MolecularFeatureExtractor
+except ImportError as _e:
+    logger.warning(f"feature_extraction unavailable: {_e}")
+    MolecularFeatureExtractor = None
+
+try:
+    from core.ml.binding_affinity import GraphDTAPredictor, smiles_to_molecule_features
+except ImportError as _e:
+    logger.warning(f"binding_affinity unavailable: {_e}")
+    GraphDTAPredictor = None
+    smiles_to_molecule_features = None
+
+try:
+    from core.ml.medgemma_service import MedGemmaService
+except ImportError as _e:
+    logger.warning(f"medgemma_service unavailable: {_e}")
+    MedGemmaService = None
 
 class PredictionConfidence(Enum):
     """Confidence levels for predictions."""
@@ -123,19 +143,42 @@ class UnifiedPredictor:
         self.use_medgemma = use_medgemma
         self.use_chemberta = use_chemberta
 
-        # Initialize model manager
-        self.model_manager = get_model_manager()
+        # Initialize model manager (optional)
+        self.model_manager = None
+        if get_model_manager is not None:
+            try:
+                self.model_manager = get_model_manager()
+            except Exception as e:
+                logger.warning(f"Could not init model manager: {e}")
 
-        # Initialize feature extractor
-        self.feature_extractor = MolecularFeatureExtractor(use_esm2=True)
+        # Initialize feature extractor (optional)
+        self.feature_extractor = None
+        if MolecularFeatureExtractor is not None:
+            try:
+                self.feature_extractor = MolecularFeatureExtractor(use_esm2=True)
+            except Exception as e:
+                logger.warning(f"Could not init feature extractor: {e}")
 
-        # Initialize binding affinity predictor
-        self.binding_predictor = GraphDTAPredictor()
+        # Initialize binding affinity predictor (optional)
+        self.binding_predictor = None
+        if GraphDTAPredictor is not None:
+            try:
+                self.binding_predictor = GraphDTAPredictor()
+            except Exception as e:
+                logger.warning(f"Could not init binding predictor: {e}")
 
         # Optional: MedGemma for validation
-        self.medgemma = MedGemmaService() if use_medgemma else None
+        self.medgemma = None
+        if use_medgemma and MedGemmaService is not None:
+            try:
+                self.medgemma = MedGemmaService()
+            except Exception as e:
+                logger.warning(f"Could not init MedGemma: {e}")
 
-        logger.info("Initialized UnifiedPredictor with pre-trained models")
+        logger.info("Initialized UnifiedPredictor (feature_extractor=%s, binding=%s, medgemma=%s)",
+                     self.feature_extractor is not None,
+                     self.binding_predictor is not None,
+                     self.medgemma is not None)
 
     def analyze_molecule(self, smiles: str) -> MoleculeAnalysis:
         """
@@ -154,8 +197,13 @@ class UnifiedPredictor:
         if mol is None:
             return MoleculeAnalysis(smiles=smiles, validity=False)
 
-        # Extract features
-        features = self.feature_extractor.extract_molecule_features(smiles)
+        # Extract features (if extractor available)
+        features = None
+        if self.feature_extractor is not None:
+            try:
+                features = self.feature_extractor.extract_molecule_features(smiles)
+            except Exception as e:
+                logger.warning(f"Feature extraction failed: {e}")
 
         return MoleculeAnalysis(
             smiles=smiles,
@@ -187,6 +235,11 @@ class UnifiedPredictor:
             BindingPrediction
         """
         try:
+            # Check if binding prediction is available
+            if self.binding_predictor is None or smiles_to_molecule_features is None:
+                # Fallback: return a heuristic-based prediction
+                return self._fallback_binding_prediction(molecule_smiles, target_name)
+
             # Extract molecular features
             mol_features = smiles_to_molecule_features(molecule_smiles)
             if mol_features is None:
@@ -200,7 +253,7 @@ class UnifiedPredictor:
                 )
 
             # Get protein embedding
-            if target_sequence:
+            if target_sequence and self.feature_extractor is not None:
                 prot_features = self.feature_extractor.extract_protein_features(
                     target_sequence
                 )
@@ -396,6 +449,39 @@ class UnifiedPredictor:
             return "Moderate potential - needs improvement"
         else:
             return "Poor candidate - not recommended"
+
+    def _fallback_binding_prediction(
+        self, molecule_smiles: str, target_name: str
+    ) -> BindingPrediction:
+        """Heuristic binding prediction when models are unavailable."""
+        try:
+            from rdkit import Chem
+            from rdkit.Chem import Descriptors
+
+            mol = Chem.MolFromSmiles(molecule_smiles)
+            if mol is None:
+                raise ValueError("Invalid SMILES")
+            mw = Descriptors.MolWt(mol)
+            logp = Descriptors.MolLogP(mol)
+            # Simple heuristic: drug-like => moderate score
+            score = 5.0
+            if 200 < mw < 500 and -1 < logp < 5:
+                score = 6.5
+            return BindingPrediction(
+                target_name=target_name,
+                binding_score=score,
+                confidence=PredictionConfidence.DEMO,
+                prediction_method="Heuristic (models unavailable)",
+                reasoning=f"MW={mw:.1f}, LogP={logp:.2f}. Full GraphDTA model not loaded.",
+            )
+        except Exception as e:
+            return BindingPrediction(
+                target_name=target_name,
+                binding_score=0.0,
+                confidence=PredictionConfidence.LOW,
+                prediction_method="Fallback",
+                reasoning=f"Prediction unavailable: {e}",
+            )
 
     def process_molecule_batch(
         self, smiles_list: List[str], target_name: str
