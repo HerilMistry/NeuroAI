@@ -107,10 +107,4 @@ Risk–Efficacy Output + Simulation
 
 ---
 
-## Local Development Setup
 
-### 1. Start Backend
-
-```bash
-cd NeuroAI
-bash startup.sh
