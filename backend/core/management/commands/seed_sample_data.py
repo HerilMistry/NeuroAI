@@ -4,12 +4,90 @@ Management command to seed sample data for development.
 Usage:
     python manage.py seed_sample_data
 """
+from dataclasses import dataclass, field
+from typing import Dict
 from django.core.management.base import BaseCommand
 from core.models import (
     Drug, Target, DrugTarget, Pathway, PathwayTarget,
     DrugPathwayEffect, DiseaseState
 )
-from core.logic import calculate_cns_mpo_score
+
+
+# ── Inline CNS MPO scoring (no external dependency) ─────────
+@dataclass
+class CNSMPOResult:
+    total_score: float
+    is_viable: bool
+    component_scores: Dict[str, float] = field(default_factory=dict)
+
+
+def calculate_cns_mpo_score(
+    molecular_weight: float,
+    logp: float,
+    hbd: int,
+    tpsa: float,
+    pka: float,
+) -> CNSMPOResult:
+    """
+    Rule-based CNS Multi-Parameter Optimisation score (0-6).
+
+    Each of the 6 components contributes 0-1:
+      MW, LogP, HBD, TPSA, pKa  (+ a simple drug-likeness bonus)
+    Viable threshold: total >= 4.0
+    """
+    scores: Dict[str, float] = {}
+
+    # MW  (ideal < 360, worst > 500)
+    if molecular_weight <= 360:
+        scores["mw"] = 1.0
+    elif molecular_weight >= 500:
+        scores["mw"] = 0.0
+    else:
+        scores["mw"] = 1.0 - (molecular_weight - 360) / 140
+
+    # LogP (ideal 1-3)
+    if 1.0 <= logp <= 3.0:
+        scores["logp"] = 1.0
+    elif logp < 0 or logp > 5:
+        scores["logp"] = 0.0
+    else:
+        scores["logp"] = 0.5
+
+    # HBD (ideal 0-1)
+    if hbd <= 1:
+        scores["hbd"] = 1.0
+    elif hbd == 2:
+        scores["hbd"] = 0.75
+    elif hbd == 3:
+        scores["hbd"] = 0.25
+    else:
+        scores["hbd"] = 0.0
+
+    # TPSA (ideal 40-90)
+    if 40 <= tpsa <= 90:
+        scores["tpsa"] = 1.0
+    elif tpsa < 20 or tpsa > 120:
+        scores["tpsa"] = 0.0
+    else:
+        scores["tpsa"] = 0.5
+
+    # pKa (ideal 7.5-10.5)
+    if 7.5 <= pka <= 10.5:
+        scores["pka"] = 1.0
+    elif pka < 6 or pka > 12:
+        scores["pka"] = 0.0
+    else:
+        scores["pka"] = 0.5
+
+    # Simple drug-likeness bonus
+    scores["druglikeness"] = 1.0 if molecular_weight < 500 and 0 < logp < 5 else 0.0
+
+    total = round(sum(scores.values()), 2)
+    return CNSMPOResult(
+        total_score=total,
+        is_viable=total >= 4.0,
+        component_scores=scores,
+    )
 
 
 class Command(BaseCommand):
@@ -66,11 +144,19 @@ class Command(BaseCommand):
                 tpsa=drug_data['tpsa'],
                 pka=drug_data['pka'],
             )
-            
+
             drug, created = Drug.objects.update_or_create(
                 drugbank_id=drug_data['drugbank_id'],
                 defaults={
-                    **drug_data,
+                    'name': drug_data['name'],
+                    'smiles': drug_data['smiles'],
+                    'molecular_weight': drug_data['molecular_weight'],
+                    'logp': drug_data['logp'],
+                    'hbd': drug_data['hbd'],
+                    'hba': drug_data['hba'],
+                    'tpsa': drug_data['tpsa'],
+                    'pka': drug_data['pka'],
+                    'is_approved': drug_data['is_approved'],
                     'cns_mpo_score': mpo.total_score,
                     'cns_viable': mpo.is_viable,
                     'cns_score_explanation': mpo.component_scores,
